@@ -17,14 +17,15 @@ import matplotlib.pyplot as plt
 
 def simple_nn_baseline(hidden_layers, learning_rate):
     data_path = r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\data"
-    features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , label_file = "N2_SSL.csv")
+    features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , label_file = "N2_SSL_R299up.csv")
     input_size = features_tensor.shape[1]  
     output_size = targets_tensor.shape[1]  
     hidden = hidden_layers
     model = SimpleNN(input_size, hidden, output_size)
     
     # Step 3: Define Loss Function and Optimizer
-    criterion = nn.MSELoss()  # Using Mean Squared Error loss
+    #criterion = nn.MSELoss()  # Using Mean Squared Error loss
+    criterion = nn.HuberLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
     #Total number of trainable paramters
@@ -49,7 +50,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     training_loss = []
     validation_loss = []
     r2_score = {}
-    num_epochs = 30000
+    num_epochs = 500
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -103,8 +104,8 @@ def simple_nn_baseline(hidden_layers, learning_rate):
 if __name__ == "__main__":
     r2_score = {}
     test_loss = {}
-    hidden_layers = [[30, 10], [50, 20], [100, 100]]
-    learning_rate = [0.1, 0.01, 0.001]
+    hidden_layers = [[30, 10]]
+    learning_rate = [0.001]
     for h in hidden_layers:
         for l in learning_rate:
              print("######"*5)
