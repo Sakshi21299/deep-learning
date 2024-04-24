@@ -1,10 +1,10 @@
-
 # -*- coding: utf-8 -*-
 """
-Created on Sun Mar 17 18:15:56 2024
+Created on Wed Apr 24 17:11:30 2024
 
 @author: ssnaik
 """
+
 from mof_net.data.reading_files import get_data
 from mof_net.models.neural_net import SimpleNN
 import torch
@@ -19,13 +19,70 @@ from mof_net.util.model_evaluation import model_eval
 from mof_net.util.perform_pca import get_principal_components
 
 torch.manual_seed(42)
+def append_feature_vector_1(features_tensor, targets_tensor):
+    #Load trained model on feature 1
+    #Data for loading model outputs from first target network
+    features_target1 = get_principal_components(features_tensor, 11)
+    input_size_t1 = features_target1.shape[1]  
+    output_size_t1 = targets_tensor[:,0:1].shape[1]  
+    hidden_t1 = [400, 500]
+    
+    #training features for target 1
+    model_target1 = SimpleNN(input_size_t1, hidden_t1, output_size_t1)
+    model_target1.load_state_dict(torch.load(r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\experiments\saved_models\new_results\pca\nn_target_1_model_11_pca_400_500_001_mse.pkl"))
+    
+    #Evaluate target 1 by passing the features through trained model
+   
+    with torch.no_grad():
+        outputs = model_target1(features_target1)
+        
+    #Scale the outputs
+    #outputs_scaled = (outputs - min(outputs))/(max(outputs) - min(outputs))
+    
+    #Append the predicted output to the features tensor as an input to the second NN
+    features_tensor = torch.cat((features_tensor, outputs), 1)
+    return features_tensor
+
+def append_feature_vector_2(features_tensor, targets_tensor):
+    #Load trained model on feature 1
+    #Data for loading model outputs from first target network
+    features_target1 = get_principal_components(features_tensor, 10)
+    input_size_t1 = features_target1.shape[1]  
+    output_size_t1 = targets_tensor[:,1:2].shape[1]  
+    hidden_t1 = [100, 150]
+    
+    #training features for target 1
+    model_target1 = SimpleNN(input_size_t1, hidden_t1, output_size_t1)
+    model_target1.load_state_dict(torch.load(r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\experiments\saved_models\new_results\pca\nn_target_2_model_pca_teachersforcing.pkl"))
+    
+    #Evaluate target 1 by passing the features through trained model
+   
+    with torch.no_grad():
+        outputs = model_target1(features_target1)
+        
+    #Scale the outputs
+    outputs_scaled = (outputs - min(outputs))/(max(outputs) - min(outputs))
+    
+    #Append the predicted output to the features tensor as an input to the second NN
+    features_tensor = torch.cat((features_tensor, outputs), 1)
+    return features_tensor
+
 def simple_nn_baseline(hidden_layers, learning_rate):
     data_path = r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\data"
-    features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , label_file = "N2_SSL_R299up.csv")
+    features_tensor_orig, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , label_file = "N2_SSL_R299up.csv")
+   
+    #Append real labels for target 1 and 2 to the features tensor
+    features_tensor = torch.cat((features_tensor_orig, targets_tensor[:,0:2]), 1)
     
     #Do pca
     features_tensor = get_principal_components(features_tensor, 14)
-  
+     
+    #Append features
+    features_tensor_test = append_feature_vector_1(features_tensor_orig, targets_tensor)
+    features_tensor_test = append_feature_vector_2(features_tensor_test, targets_tensor)
+    
+    #Do pca for the test set
+    features_tensor_test = get_principal_components(features_tensor_test, 14)
     
     targets_tensor = targets_tensor[:,2:3]
     input_size = features_tensor.shape[1]  
@@ -43,8 +100,12 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     # Step 4: Train the Neural Network
     # Splitting the data into training and testing sets
     # Split data into train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(features_tensor, targets_tensor, test_size=0.2, random_state=1, shuffle = True)
-
+    X_train, X_test_fake, y_train, y_test_fake = train_test_split(features_tensor, targets_tensor, test_size=0.2, random_state=1, shuffle = True)
+    
+    #We can't use this test data for testing since it has the real y 
+    #We need to create the test set from the features_tensor_test
+    X_train_fake, X_test, y_train_fake, y_test = train_test_split(features_tensor_test, targets_tensor, test_size=0.2, random_state=1, shuffle = True)
+    
     # Split train data into train and validation sets
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.15, random_state=1, shuffle = True)
 
@@ -84,7 +145,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
         print(f"Epoch {epoch+1}, Loss validation: {val_loss/len(val_loader)}")
         
     # Step 5: Evaluate the Model
-    torch.save(model.state_dict(), 'nn_target_3_model_14_pca_400_500_001.pkl') # Save the model
+    torch.save(model.state_dict(), 'nn_target_3_model__with_pred1_2_14_pca_250_250_01.pkl') # Save the model
     plt.figure()
     plt.plot(training_loss)
     plt.plot(validation_loss)

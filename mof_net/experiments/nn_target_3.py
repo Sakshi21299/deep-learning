@@ -15,6 +15,8 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import numpy as np
 from mof_net.util.model_evaluation import model_eval
+
+torch.manual_seed(42)
 def simple_nn_baseline(hidden_layers, learning_rate):
     data_path = r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\data"
     features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , label_file = "N2_SSL_R299up.csv")

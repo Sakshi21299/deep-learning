@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from mof_net.util.perform_pca import get_principal_components
 from mof_net.util.model_evaluation import model_eval
 
+torch.manual_seed(42)
 def simple_nn_baseline(hidden_layers, learning_rate):
     data_path = r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\data"
     features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , label_file = "N2_SSL_R299up.csv")
@@ -80,7 +81,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
         print(f"Epoch {epoch+1}, Loss validation: {val_loss/len(val_loader)}")
         
     # Step 5: Evaluate the Model
-    torch.save(model.state_dict(), 'nn_target_1_model_11_pca_150_200_001.pkl') # Save the model
+    torch.save(model.state_dict(), 'nn_target_1_model_11_pca_400_500_001.pkl') # Save the model
     plt.figure()
     plt.plot(training_loss)
     plt.plot(validation_loss)

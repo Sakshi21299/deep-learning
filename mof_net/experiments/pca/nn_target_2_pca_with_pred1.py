@@ -18,6 +18,7 @@ import numpy as np
 from mof_net.util.model_evaluation import model_eval
 from mof_net.util.perform_pca import get_principal_components
 
+torch.manual_seed(42)
 def append_feature_vector_1(features_tensor, targets_tensor):
     #Load trained model on feature 1
     #Data for loading model outputs from first target network
@@ -28,7 +29,7 @@ def append_feature_vector_1(features_tensor, targets_tensor):
     
     #training features for target 1
     model_target1 = SimpleNN(input_size_t1, hidden_t1, output_size_t1)
-    model_target1.load_state_dict(torch.load(r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\experiments\saved_models\pca_plain\nn_target_1_model_11_pca_400_500_001_mse.pkl"))
+    model_target1.load_state_dict(torch.load(r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\experiments\saved_models\new_results\pca\nn_target_1_model_11_pca_400_500_001_mse.pkl"))
     
     #Evaluate target 1 by passing the features through trained model
    
@@ -36,10 +37,10 @@ def append_feature_vector_1(features_tensor, targets_tensor):
         outputs = model_target1(features_target1)
         
     #Scale the outputs
-    outputs_scaled = (outputs - min(outputs))/(max(outputs) - min(outputs))
+    #outputs_scaled = (outputs - min(outputs))/(max(outputs) - min(outputs))
     
     #Append the predicted output to the features tensor as an input to the second NN
-    features_tensor = torch.cat((features_tensor, outputs_scaled), 1)
+    features_tensor = torch.cat((features_tensor, outputs), 1)
     return features_tensor
     
     
@@ -74,7 +75,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     # Splitting the data into training and testing sets
     # Split data into train and test sets
     X_train, X_test, y_train, y_test = train_test_split(features_tensor, targets_tensor, test_size=0.2, random_state=1, shuffle = True)
-
+    
     # Split train data into train and validation sets
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.15, random_state=1, shuffle = True)
 
@@ -91,7 +92,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     validation_loss = []
     validation_loss_to_eval = []
     
-    num_epochs = 1500
+    num_epochs = 1000
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     r2_score_train = {}
     test_loss = {}
     train_loss = {}
-    hidden_layers = [[150, 70]]
+    hidden_layers = [[100, 150]]
     learning_rate = [0.01]
     for h in hidden_layers:
         for l in learning_rate:

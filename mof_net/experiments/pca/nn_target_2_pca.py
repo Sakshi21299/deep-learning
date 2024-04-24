@@ -17,13 +17,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mof_net.util.model_evaluation import model_eval
 from mof_net.util.perform_pca import get_principal_components
+
+torch.manual_seed(42)
 def simple_nn_baseline(hidden_layers, learning_rate):
     data_path = r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\data"
     features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , 
                                                label_file = "N2_SSL_R299up.csv")
  
     #Do pca for second target 
-    features_tensor = get_principal_components(features_tensor, 16)
+    features_tensor = get_principal_components(features_tensor, 10)
     
    
     targets_tensor = targets_tensor[:,1:2]
@@ -95,7 +97,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
         validation_loss_to_eval.append(val_loss_to_eval/len(val_loader))
         print(f"Epoch {epoch+1}, Loss validation: {val_loss/len(val_loader)}")
     
-    torch.save(model.state_dict(), 'nn_target_2_model_30_10_001_huber.pkl') # Save the model
+    torch.save(model.state_dict(), 'nn_target_2_pca_model_30_10_001_mse.pkl') # Save the model
     plt.figure()
     plt.plot(training_loss)
     plt.plot(validation_loss)

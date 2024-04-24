@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Mar 17 17:44:12 2024
+Created on Mon Apr 22 16:27:19 2024
 
 @author: ssnaik
 """
+
 from mof_net.data.reading_files import get_data
 from mof_net.models.neural_net import SimpleNN
 import torch
@@ -13,14 +14,35 @@ from torch.utils.data import DataLoader, TensorDataset
 from torcheval.metrics import R2Score
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+import numpy as np
 from mof_net.util.model_evaluation import model_eval
-
-torch.manual_seed(42)
 def simple_nn_baseline(hidden_layers, learning_rate):
     data_path = r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\data"
-    features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp.csv" , label_file = "N2_SSL_R299up.csv")
+    features_tensor, targets_tensor = get_data(data_path, features_file = "zeopp_pca_target3.csv" , label_file = "N2_SSL_R299up.csv")
     
-    targets_tensor = targets_tensor[:,0:1]
+    #Load trained model on feature 1
+    #Data for loading model outputs from first target network
+    features_target1, _= get_data(data_path, features_file = "zeopp_pca_target1.csv" , 
+                                               label_file = "N2_SSL_R299up.csv")
+    input_size_t1 = features_target1.shape[1]  
+    output_size_t1 = targets_tensor[:,0:1].shape[1]  
+    hidden_t1 = [150, 200]
+    
+    #training features for target 1
+    model_target1 = SimpleNN(input_size_t1, hidden_t1, output_size_t1)
+    model_target1.load_state_dict(torch.load(r"C:\Users\ssnaik\Documents\Courses\Homeworks\adv_deep_learning\Project\deep-learning\mof_net\experiments\saved_models\nn_target_1_model_150_200_01_mse.pkl"))
+    
+    #Evaluate target 1 by passing the features through trained model
+   
+    with torch.no_grad():
+        outputs = model_target1(features_target1)
+        
+    #Scale the outputs
+    outputs_scaled = (outputs - min(outputs))/(max(outputs) - min(outputs))
+    
+    #Append the predicted output to the features tensor as an input to the second NN
+    features_tensor = torch.cat((features_tensor, outputs), 1)
+    targets_tensor = targets_tensor[:,2:3]
     input_size = features_tensor.shape[1]  
     output_size = targets_tensor.shape[1]  
     hidden = hidden_layers
@@ -28,6 +50,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     
     # Step 3: Define Loss Function and Optimizer
     criterion = nn.MSELoss()  # Using Mean Squared Error loss
+    #criterion = nn.HuberLoss(delta = 1)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
     #Total number of trainable paramters
@@ -36,11 +59,11 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     # Step 4: Train the Neural Network
     # Splitting the data into training and testing sets
     # Split data into train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(features_tensor, targets_tensor, test_size=0.2, random_state=1, shuffle=True)
-    
+    X_train, X_test, y_train, y_test = train_test_split(features_tensor, targets_tensor, test_size=0.2, random_state=42)
+
     # Split train data into train and validation sets
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.15, random_state=1, shuffle= True)
-    
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.15, random_state=42)
+
     # Creating DataLoader for training and testing sets
     train_dataset = TensorDataset(X_train, y_train)
     test_dataset = TensorDataset(X_test, y_test)
@@ -53,6 +76,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     validation_loss = []
     r2_score = {}
     num_epochs = 1000
+    
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -76,7 +100,7 @@ def simple_nn_baseline(hidden_layers, learning_rate):
         print(f"Epoch {epoch+1}, Loss validation: {val_loss/len(val_loader)}")
         
     # Step 5: Evaluate the Model
-    torch.save(model.state_dict(), 'nn_target_1_model_150_200_001_mse.pkl') # Save the model
+    torch.save(model.state_dict(), 'nn_target_3_model_30_10_001_huber.pkl') # Save the model
     plt.figure()
     plt.plot(training_loss)
     plt.plot(validation_loss)
@@ -87,13 +111,14 @@ def simple_nn_baseline(hidden_layers, learning_rate):
     
     r2_score_training, average_loss_training = model_eval(model, train_loader, criterion)
     r2_score, average_loss = model_eval(model, test_loader, criterion)
+   
     return r2_score, average_loss
     
 if __name__ == "__main__":
     r2_score = {}
     test_loss = {}
-    hidden_layers = [[150, 200]]
-    learning_rate = [0.001]
+    hidden_layers = [[1500, 1000]]
+    learning_rate = [0.01]
     for h in hidden_layers:
         for l in learning_rate:
              print("######"*5)
