@@ -18,7 +18,7 @@ def model_eval(model, test_loader, criterion):
     r2_score = {}
     model.eval()
     total_loss = 0.0
-    metric = R2Score()
+    metric = R2Score(multioutput = "raw_values")
     plt.figure()
     # Generate x values
     pp_x = np.linspace(0, 1)
@@ -28,8 +28,9 @@ def model_eval(model, test_loader, criterion):
     with torch.no_grad():
         for inputs, labels in test_loader:
             outputs = model(inputs)
-            plt.plot(outputs, 'ro')
-            plt.plot(labels, 'bx')
+            plt.plot(outputs, 'ro', label = 'predictions')
+            plt.plot(labels, 'bx', label = 'truth')
+            plt.legend()
             
             plt.figure()
             plt.plot(outputs, labels, 'o')
@@ -38,10 +39,9 @@ def model_eval(model, test_loader, criterion):
             loss = criterion(outputs, labels)
             total_loss += loss.item()
             
-            for dim in range(1):
-                metric.update(outputs[:,dim], labels[:,dim])
-                r2_score[dim] = metric.compute()
-                print("R2-SCORE = ", metric.compute())
+        metric.update(outputs, labels)
+        r2_score = metric.compute()
+        print("R2-SCORE = ",r2_score)
                 
 
     average_loss = total_loss / len(test_loader)
