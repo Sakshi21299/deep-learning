@@ -5,6 +5,9 @@ Created on Sun Mar 17 12:41:59 2024
 @author: ssnaik
 """
 import torch.nn as nn
+import torch
+
+torch.manual_seed(42)
 #Define the Neural Network
 class SimpleNN(nn.Module):
     def __init__(self, input_size,hidden,  output_size):
